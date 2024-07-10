@@ -1,0 +1,82 @@
+### Sample Tekton Java Build Pipeline ###
+
+Steps to Create Tekton Pipeline
+1.	Create Task: Define the task for building the Talend job using Maven.
+2.	Create Pipeline: Define the sequence of tasks in the pipeline.
+3.	Create PipelineRun: Create a PipelineRun to trigger the pipeline.
+1. Define the Task
+Create a YAML file (talend-build-task.yaml) for the task to build the Talend job using Maven.
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: talend-build
+spec:
+  steps:
+    - name: maven-build
+      image: maven:3.6.3-jdk-8
+      script: |
+        #!/bin/sh
+        cd /workspace/source
+        mvn clean install
+      volumeMounts:
+        - name: maven-settings
+          mountPath: /root/.m2
+  volumes:
+    - name: maven-settings
+      configMap:
+        name: maven-settings
+
+
+2. Create Pipeline
+Create a YAML file (talend-build-pipeline.yaml) to define the pipeline using the task defined above.
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: talend-build-pipeline
+spec:
+  tasks:
+    - name: build
+      taskRef:
+        name: talend-build
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+
+
+3. Create PipelineRun
+Create a YAML file (talend-build-pipelinerun.yaml) to trigger the pipeline.
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: talend-build-pipelinerun
+spec:
+  pipelineRef:
+    name: talend-build-pipeline
+  workspaces:
+    - name: shared-workspace
+      persistentVolumeClaim:
+        claimName: pvc-name
+  resources:
+    - name: source
+      resourceSpec:
+        type: git
+        params:
+          - name: url
+            value: https://github.com/your-repo/your-talend-job.git
+
+4. Apply the YAML Files
+Apply the YAML files to your Kubernetes cluster using kubectl.
+kubectl apply -f talend-build-task.yaml
+kubectl apply -f talend-build-pipeline.yaml
+kubectl apply -f talend-build-pipelinerun.yaml
+
+
+5. Monitor the Pipeline
+Use the following command to monitor the pipeline execution:
+kubectl get pipelineruns
+kubectl logs pipelinerun/talend-build-pipelinerun -c build-stepConfiguration Details
+•	Task: The task talend-build uses a Maven image to run the build command.
+•	Pipeline: The pipeline talend-build-pipeline references the talend-build task and uses a shared workspace.
+•	PipelineRun: The talend-build-pipelinerun triggers the pipeline and specifies the Git repository containing the Talend job.
+Adjust the configurations, including Maven settings, Talend job repository, and other specific build requirements, according to your environment and needs.
+
