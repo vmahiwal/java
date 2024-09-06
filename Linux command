@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# List of dangerous commands
+declare -a DANGEROUS_COMMANDS=("rm -rf /" "mkfs" "dd" "shutdown" "reboot")
+
+# The command input
+COMMAND="$*"
+
+# Function to check if the command is dangerous
+is_dangerous_command() {
+    for dangerous in "${DANGEROUS_COMMANDS[@]}"; do
+        if [[ "$COMMAND" == *"$dangerous"* ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Check the command
+if is_dangerous_command; then
+    echo "Error: The command '$COMMAND' is considered dangerous and will not be executed."
+    exit 1
+else
+    echo "Executing: $COMMAND"
+    eval "$COMMAND"
+fi
