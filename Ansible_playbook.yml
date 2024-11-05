@@ -20,3 +20,10 @@
     - name: Display completion message
       ansible.builtin.debug:
         msg: "Script executed with username {{ current_user.stdout }}"
+register: script_output
+      ignore_errors: no   # Set to 'yes' if you want the playbook to continue even if the script fails
+
+    - name: Display output of shell script
+      ansible.builtin.debug:
+        msg: "Output of shell script: {{ script_output.stdout }}"
+        
