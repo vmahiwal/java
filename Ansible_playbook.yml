@@ -1,0 +1,22 @@
+---
+- name: Check which user is running the playbook and pass it to a script
+  hosts: localhost
+  gather_facts: no
+  tasks:
+
+    - name: Get the username running the playbook
+      ansible.builtin.command: whoami
+      register: current_user
+
+    - name: Display the current user
+      ansible.builtin.debug:
+        msg: "Current user running the playbook is {{ current_user.stdout }}"
+
+    - name: Run the script and pass the username as an argument
+      ansible.builtin.command: "./my_script.sh {{ current_user.stdout }}"
+      args:
+        chdir: "/path/to/your/script"   # Change this to the directory where your script is located
+
+    - name: Display completion message
+      ansible.builtin.debug:
+        msg: "Script executed with username {{ current_user.stdout }}"
