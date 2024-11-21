@@ -1,0 +1,29 @@
+---
+- name: Execute Shell Scripts Based on Authorization
+  hosts: all
+  become: yes
+  tasks:
+
+    - name: Check if user is authorized
+      shell: /path/to/script1.sh
+      register: auth_check
+      ignore_errors: yes
+
+    - name: Debug authorization result
+      debug:
+        msg: "Authorization check result: {{ auth_check.stdout }}"
+
+    - name: Execute file operations if authorized
+      shell: /path/to/script2.sh
+      when: auth_check.rc == 0
+      register: file_op_result
+
+    - name: Debug file operation result
+      debug:
+        msg: "File operation result: {{ file_op_result.stdout }}"
+      when: auth_check.rc == 0
+
+    - name: Fail the playbook if user is not authorized
+      fail:
+        msg: "User is not authorized. Stopping further operations."
+      when: auth_check.rc != 0
