@@ -1,0 +1,34 @@
+import org.apache.spark.sql.{SparkSession, DataFrame}
+import org.apache.spark.sql.functions._
+
+object SparkFilterExample {
+
+  def main(args: Array[String]): Unit = {
+    // Step 1: Create SparkSession
+    val spark = SparkSession.builder()
+      .appName("Spark Data Filter Example")
+      .master("local[*]") // Run locally using all cores
+      .getOrCreate()
+
+    // Step 2: Read CSV file (Equivalent to tFileInputDelimited)
+    val df: DataFrame = spark.read
+      .option("header", "true")
+      .option("inferSchema", "true")
+      .csv("input.csv")
+
+    // Step 3: Filter records where age > 30
+    val filteredDf = df.filter(col("age") > 30)
+
+    // Step 4: Select specific columns
+    val resultDf = filteredDf.select("name", "age")
+
+    // Step 5: Write to output CSV
+    resultDf.write
+      .option("header", "true")
+      .mode("overwrite")
+      .csv("output.csv")
+
+    // Step 6: Stop SparkSession
+    spark.stop()
+  }
+}
