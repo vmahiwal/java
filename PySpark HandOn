@@ -1,0 +1,803 @@
+Phase 1: PySpark Fundamentals
+Goal: Understand the basics of PySpark and DataFrame operations.
+✅ Topics:
+PySpark setup & installation
+Understanding SparkContext & SparkSession
+RDDs vs DataFrames vs Datasets
+DataFrame operations (select, filter, groupBy, agg, joins)
+Handling missing data & data types
+
+
+📝 Example:
+python
+CopyEdit
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
+
+spark = SparkSession.builder.appName("PySparkBasics").getOrCreate()
+data = [("Alice", 34), ("Bob", 45), ("Catherine", 29)]
+df = spark.createDataFrame(data, ["Name", "Age"])
+df.filter(col("Age") > 30).show()
+
+🧠 Quiz:
+What is the difference between an RDD and a DataFrame?
+How do you create a SparkSession?
+What function is used to filter a DataFrame?
+Phase 2: Data Transformations & Actions
+Goal: Master transformations and actions for data processing.
+✅ Topics:
+Narrow vs Wide Transformations
+Map, Filter, FlatMap
+groupByKey vs reduceByKey
+sortBy, distinct, union, intersection
+
+
+Caching & Persisting
+
+
+📝 Example:
+python
+CopyEdit
+data = [("a", 1), ("b", 2), ("a", 3)]
+rdd = spark.sparkContext.parallelize(data)
+result = rdd.reduceByKey(lambda x, y: x + y).collect()
+print(result)
+
+🧠 Quiz:
+What is the difference between narrow and wide transformations?
+What does persist(StorageLevel.MEMORY_AND_DISK) do?
+
+
+
+Phase 3: Joins & Optimizations
+Goal: Learn performance optimizations in PySpark.
+✅ Topics:
+Different types of joins (inner, left, right, full, semi)
+Broadcast joins
+Skew handling & Data partitioning
+Repartition vs Coalesce
+Shuffle optimization
+Z-ordering & data skipping
+
+
+📝 Example:
+python
+CopyEdit
+from pyspark.sql.functions import broadcast
+df1 = spark.createDataFrame([(1, "Alice"), (2, "Bob")], ["id", "name"])
+df2 = spark.createDataFrame([(1, "NY"), (2, "CA")], ["id", "state"])
+
+result = df1.join(broadcast(df2), "id")
+result.show()
+
+🧠 Quiz:
+When should you use a broadcast join?
+What is the difference between repartition and coalesce?
+
+
+
+Phase 4: Advanced Topics
+Goal: Work with complex data types & real-world scenarios.
+✅ Topics:
+Handling nested JSON & struct types
+Window functions
+UDFs & Pandas UDFs
+Delta Lake & Iceberg
+Streaming with PySpark Structured Streaming
+
+
+📝 Example:
+python
+CopyEdit
+from pyspark.sql.window import Window
+from pyspark.sql.functions import row_number
+data = [(1, "Alice", 5000), (2, "Bob", 6000), (3, "Alice", 7000)]
+df = spark.createDataFrame(data, ["id", "name", "salary"])
+
+window_spec = Window.partitionBy("name").orderBy("salary")
+df.withColumn("rank", row_number().over(window_spec)).show()
+
+🧠 Quiz:
+What is the difference between UDF and Pandas UDF?
+How does structured streaming handle late-arriving data?
+
+
+PySpark Fundamentals - Exercises
+💡 Goal: Learn PySpark basics, DataFrames, and transformations.
+
+📌 Exercise 1: Create a DataFrame & Perform Basic Operations
+👉 Task:
+Create a DataFrame with columns: id (int), name (string), age (int), city (string).
+Show the DataFrame.
+Select only name and age.
+Filter rows where age is greater than 30.
+
+
+✍ Write your code below:
+python
+CopyEdit
+from pyspark.sql import SparkSession
+
+# Step 1: Initialize SparkSession
+spark = SparkSession.builder.appName("PySparkExercise").getOrCreate()
+
+# Step 2: Create DataFrame
+data = [(1, "Alice", 25, "New York"),
+        (2, "Bob", 35, "San Francisco"),
+        (3, "Charlie", 40, "Chicago")]
+
+columns = ["id", "name", "age", "city"]
+df = spark.createDataFrame(data, columns)
+
+# Step 3: Show DataFrame
+df.show()
+
+# Step 4: Select specific columns
+df.select("name", "age").show()
+
+# Step 5: Filter age > 30
+df.filter(df.age > 30).show()
+
+✅ Expected Output:
+pgsql
+CopyEdit
++---+-------+---+-------------+
+| id|   name|age|        city|
++---+-------+---+-------------+
+|  1|  Alice| 25|    New York|
+|  2|    Bob| 35|San Francisco|
+|  3|Charlie| 40|     Chicago|
++---+-------+---+-------------+
+
++-------+---+
+|   name|age|
++-------+---+
+|  Alice| 25|
+|    Bob| 35|
+|Charlie| 40|
++-------+---+
+
++---+-------+---+-------------+
+| id|   name|age|        city|
++---+-------+---+-------------+
+|  2|    Bob| 35|San Francisco|
+|  3|Charlie| 40|     Chicago|
++---+-------+---+-------------+
+
+
+📌 Exercise 2: Perform Aggregations
+👉 Task:
+Find the average age.
+Count how many people are from each city.
+
+
+✍ Write your code below:
+python
+CopyEdit
+from pyspark.sql.functions import avg, count
+
+# Average age
+df.select(avg("age")).show()
+
+# Count by city
+df.groupBy("city").count().show()
+
+✅ Expected Output:
+sql
++--------+
+|avg(age)|
++--------+
+|    33.3|
++--------+
+
++-------------+-----+
+|        city|count|
++-------------+-----+
+|    New York|    1|
+|San Francisco|    1|
+|     Chicago|    1|
++-------------+-----+
+
+
+📌 Quiz: PySpark Fundamentals
+What is the purpose of SparkSession?
+How do you create a DataFrame from a list of tuples?
+What function is used to filter a DataFrame?
+What is the difference between select() and filter() in PySpark?
+How do you count the number of rows in a DataFrame?
+
+
+
+
+📌 Exercise 2: ReduceByKey for Aggregation
+👉 Task:
+Create an RDD with sales data:
+
+[("Laptop", 1000), ("Phone", 500), ("Laptop", 1200), ("Phone", 700)]
+
+
+Use reduceByKey() to find the total sales for each product.
+
+
+✍ Write your code below:
+python
+
+# Step 1: Create an RDD
+sales_rdd = sc.parallelize([("Laptop", 1000), ("Phone", 500), ("Laptop", 1200), ("Phone", 700)])
+
+# Step 2: Aggregate sales by product
+sales_total = sales_rdd.reduceByKey(lambda x, y: x + y)
+
+# Step 3: Show results
+print(sales_total.collect())  # Expected Output: [('Laptop', 2200), ('Phone', 1200)]
+
+
+📌 Exercise 3: Using sortBy() and distinct()
+👉 Task:
+Create an RDD with the following values: [5, 3, 1, 4, 2, 2, 3, 1].
+Remove duplicates using distinct().
+Sort the numbers in ascending order using sortBy().
+
+
+✍ Write your code below:
+python
+CopyEdit
+# Step 1: Create an RDD
+numbers_rdd = sc.parallelize([5, 3, 1, 4, 2, 2, 3, 1])
+
+# Step 2: Remove duplicates
+unique_rdd = numbers_rdd.distinct()
+
+# Step 3: Sort in ascending order
+sorted_rdd = unique_rdd.sortBy(lambda x: x)
+
+# Step 4: Show results
+print(sorted_rdd.collect())  # Expected Output: [1, 2, 3, 4, 5]
+
+
+📌 Quiz: Data Transformations & Actions
+What is the difference between map() and flatMap()?
+What is the key difference between groupByKey() and reduceByKey()?
+How do you persist an RDD in memory to optimize performance?
+What is the difference between an RDD transformation and an action?
+What does distinct() do in an RDD?
+
+📝 Phase 3: Joins & Optimizations - Exercises
+💡 Goal: Learn different join types, broadcast joins, partitioning, and optimizations.
+
+📌 Exercise 1: Perform Different Joins in PySpark
+👉 Task:
+Create two DataFrames:
+
+
+employees: (id, name, dept_id)
+departments: (dept_id, dept_name)
+
+
+Perform the following joins:
+Inner Join (Only matching records)
+Left Join (All employees, even if no department)
+Right Join (All departments, even if no employee)
+Full Outer Join (All records)
+
+
+✍ Write your code below:
+python
+CopyEdit
+from pyspark.sql import SparkSession
+
+# Initialize SparkSession
+spark = SparkSession.builder.appName("Joins").getOrCreate()
+
+# Create DataFrames
+employees = [(1, "Alice", 101), (2, "Bob", 102), (3, "Charlie", None)]
+departments = [(101, "HR"), (102, "Finance"), (103, "IT")]
+
+emp_df = spark.createDataFrame(employees, ["id", "name", "dept_id"])
+dept_df = spark.createDataFrame(departments, ["dept_id", "dept_name"])
+
+# Perform Joins
+inner_join = emp_df.join(dept_df, "dept_id", "inner")
+left_join = emp_df.join(dept_df, "dept_id", "left")
+right_join = emp_df.join(dept_df, "dept_id", "right")
+full_outer_join = emp_df.join(dept_df, "dept_id", "outer")
+
+# Show Results
+inner_join.show()
+left_join.show()
+right_join.show()
+full_outer_join.show()
+
+✅ Expected Output (Simplified View):
+sql
+CopyEdit
+Inner Join:
++-------+------+-------+
+|dept_id| name |dept_name|
++-------+------+-------+
+|   101 | Alice |   HR |
+|   102 |  Bob  |Finance|
++-------+------+-------+
+
+Left Join:
++----+-------+-------+
+| id | name  |dept_name|
++----+-------+-------+
+| 1  | Alice |   HR |
+| 2  |  Bob  |Finance|
+| 3  |Charlie|  NULL |
++----+-------+-------+
+
+Right Join:
+(Similar, but keeps all departments)
+
+Full Outer Join:
+(Keeps all employees & departments)
+
+
+📌 Exercise 2: Broadcast Join for Performance Optimization
+👉 Task:
+Create two DataFrames:
+large_df: (100,000 records with id, value)
+small_df: (100 records with id, category)
+
+
+Use a broadcast join to optimize performance.
+
+
+✍ Write your code below:
+python
+CopyEdit
+from pyspark.sql.functions import broadcast
+import random
+
+# Create Large DataFrame
+large_data = [(i, random.randint(1, 1000)) for i in range(100000)]
+large_df = spark.createDataFrame(large_data, ["id", "value"])
+
+# Create Small DataFrame
+small_data = [(i, f"Category-{i%10}") for i in range(100)]
+small_df = spark.createDataFrame(small_data, ["id", "category"])
+
+# Use Broadcast Join
+optimized_join = large_df.join(broadcast(small_df), "id", "left")
+
+# Show Results
+optimized_join.show()
+
+✅ Why use broadcast join?
+Faster execution: Avoids large data shuffling.
+Best for small lookup tables.
+
+📌 Exercise 3: Repartitioning & Coalesce Optimization
+👉 Task:
+Read a CSV file as a DataFrame.
+Check the number of partitions.
+Use repartition(4) and coalesce(2), and observe the changes.
+
+
+✍ Write your code below:
+python
+CopyEdit
+# Read CSV (Replace 'data.csv' with an actual file)
+df = spark.read.csv("data.csv", header=True, inferSchema=True)
+
+# Check partitions
+print("Number of partitions:", df.rdd.getNumPartitions())
+
+# Repartition (increases partitions)
+df_repartitioned = df.repartition(4)
+print("Repartitioned to:", df_repartitioned.rdd.getNumPartitions())
+
+# Coalesce (reduces partitions)
+df_coalesced = df_repartitioned.coalesce(2)
+print("Coalesced to:", df_coalesced.rdd.getNumPartitions())
+
+✅ Expected Outcome:
+yaml
+CopyEdit
+Original Partitions: X  
+Repartitioned to: 4  
+Coalesced to: 2  
+
+Difference?
+repartition(n): Increases partitions (Shuffle occurs).
+coalesce(n): Reduces partitions (No shuffle, better for optimization).
+
+📌 Quiz: Joins & Optimizations
+What is the difference between inner, left, and right joins?
+When should you use broadcast join?
+What is the impact of too many partitions?
+What is the difference between repartition() and coalesce()?
+What is the default number of partitions in Spark?
+
+
+📝 Phase 4: Advanced Topics - Exercises
+💡 Goal: Learn handling complex data (JSON, nested structs), window functions, UDFs, and streaming.
+
+📌 Exercise 1: Handling Nested JSON & Struct Types
+👉 Task:
+Create a JSON DataFrame with nested fields:
+
+ json
+CopyEdit
+{"id": 1, "name": "Alice", "address": {"city": "New York", "zip": "10001"}}
+{"id": 2, "name": "Bob", "address": {"city": "San Francisco", "zip": "94105"}}
+
+
+Extract city and zip into separate columns using select().
+
+
+✍ Write your code below:
+python
+CopyEdit
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
+
+# Initialize SparkSession
+spark = SparkSession.builder.appName("JSONHandling").getOrCreate()
+
+# Sample JSON Data
+json_data = [
+    (1, "Alice", {"city": "New York", "zip": "10001"}),
+    (2, "Bob", {"city": "San Francisco", "zip": "94105"})
+]
+
+# Create DataFrame
+df = spark.createDataFrame(json_data, ["id", "name", "address"])
+
+# Extract Nested Fields
+df.select("id", "name", col("address.city").alias("city"), col("address.zip").alias("zip")).show()
+
+✅ Expected Output:
+pgsql
+CopyEdit
++---+-------+-------------+-----+
+|id |  name |    city     | zip |
++---+-------+-------------+-----+
+| 1 | Alice | New York    |10001|
+| 2 |  Bob  |San Francisco|94105|
++---+-------+-------------+-----+
+
+
+📌 Exercise 2: Window Functions (Ranking & Aggregation)
+👉 Task:
+Create a DataFrame with id, department, salary.
+Use row_number() to rank employees by salary within each department.
+Use avg() to calculate the average salary per department.
+✍ Write your code below:
+python
+CopyEdit
+from pyspark.sql.window import Window
+from pyspark.sql.functions import row_number, avg
+
+# Sample Data
+data = [(1, "HR", 5000), (2, "HR", 7000), (3, "IT", 8000), (4, "IT", 6000)]
+df = spark.createDataFrame(data, ["id", "department", "salary"])
+
+# Define Window Specification
+window_spec = Window.partitionBy("department").orderBy(col("salary").desc())
+
+# Apply Row Number
+df = df.withColumn("rank", row_number().over(window_spec))
+
+# Calculate Average Salary per Department
+avg_salary_df = df.groupBy("department").agg(avg("salary").alias("avg_salary"))
+
+# Show Results
+df.show()
+avg_salary_df.show()
+
+✅ Expected Output:
+diff
+CopyEdit
++---+----------+------+----+
+|id |department|salary|rank|
++---+----------+------+----+
+| 2 |      HR  | 7000 |  1 |
+| 1 |      HR  | 5000 |  2 |
+| 3 |      IT  | 8000 |  1 |
+| 4 |      IT  | 6000 |  2 |
++---+----------+------+----+
+
++----------+-----------+
+|department|avg_salary|
++----------+-----------+
+|      HR  |   6000.0 |
+|      IT  |   7000.0 |
++----------+-----------+
+
+
+📌 Exercise 3: User-Defined Functions (UDFs) & Pandas UDFs
+👉 Task:
+Create a UDF to categorize salaries:
+Salary < 6000 → "Low"
+Salary ≥ 6000 → "High"
+
+
+Convert this function to a Pandas UDF for better performance.
+
+
+✍ Write your code below:
+python
+CopyEdit
+from pyspark.sql.functions import udf
+from pyspark.sql.types import StringType
+import pandas as pd
+from pyspark.sql.functions import pandas_udf
+
+# Define UDF
+def salary_category(salary):
+    return "High" if salary >= 6000 else "Low"
+
+# Register UDF
+category_udf = udf(salary_category, StringType())
+
+# Apply UDF
+df = df.withColumn("category", category_udf(df.salary))
+df.show()
+
+# Convert to Pandas UDF
+@pandas_udf(StringType())
+def salary_category_pandas(salary_series: pd.Series) -> pd.Series:
+    return salary_series.apply(lambda x: "High" if x >= 6000 else "Low")
+
+# Apply Pandas UDF
+df = df.withColumn("category_pandas", salary_category_pandas(df.salary))
+df.show()
+
+✅ Why Pandas UDF?
+Faster execution
+Vectorized operations (better performance than row-wise UDFs)
+
+
+
+📌 Exercise 4: Streaming Data Processing with PySpark
+👉 Task:
+Read a streaming DataFrame from a folder (Simulating real-time data ingestion).
+Write the results to the console in append mode.
+
+
+✍ Write your code below:
+python
+CopyEdit
+from pyspark.sql.types import StructType, StringType, IntegerType
+
+# Define Schema
+schema = StructType().add("id", IntegerType()).add("name", StringType()).add("age", IntegerType())
+
+# Read Streaming Data
+streaming_df = spark.readStream.schema(schema).csv("path/to/folder")
+
+# Process Data (Filter age > 30)
+filtered_df = streaming_df.filter("age > 30")
+
+# Write Stream to Console
+query = filtered_df.writeStream.outputMode("append").format("console").start()
+
+query.awaitTermination()
+
+✅ Expected Behavior:
+Monitors path/to/folder for new CSV files.
+Processes new data in real-time.
+Prints results when new data arrives.
+
+
+
+📌 Quiz: Advanced Topics
+How do you extract fields from a nested JSON structure?
+What is a Window Function? Give an example.
+How does a Pandas UDF differ from a regular UDF?
+What is the default output mode in Structured Streaming?
+How do you handle late-arriving data in PySpark Streaming?
+Project Overview: E-Commerce Sales Analysis
+🛒 Scenario:
+ You are a Data Engineer for an e-commerce company. Your goal is to process daily transaction data, clean it, optimize performance, and generate analytics.
+📂 Input Data:
+transactions.csv: (order_id, customer_id, amount, category, timestamp)
+
+
+customers.csv: (customer_id, name, location)
+
+
+📈 Tasks:
+ ✅ Load data efficiently using Spark DataFrames
+ ✅ Clean and filter invalid transactions
+ ✅ Perform aggregations (total sales per category, top customers)
+ ✅ Optimize joins with broadcasting
+ ✅ Store final results in Parquet
+
+🛠 Step 1: Initialize SparkSession & Read Data
+python
+CopyEdit
+from pyspark.sql import SparkSession
+
+# Initialize Spark
+spark = SparkSession.builder.appName("ECommerceSales").getOrCreate()
+
+# Read Transaction Data
+transactions_df = spark.read.csv("transactions.csv", header=True, inferSchema=True)
+
+# Read Customer Data
+customers_df = spark.read.csv("customers.csv", header=True, inferSchema=True)
+
+# Show Sample Data
+transactions_df.show(5)
+customers_df.show(5)
+
+
+🛠 Step 2: Data Cleaning (Remove Duplicates & Nulls)
+python
+CopyEdit
+from pyspark.sql.functions import col
+
+# Remove Duplicates
+transactions_df = transactions_df.dropDuplicates()
+customers_df = customers_df.dropDuplicates()
+
+# Remove Null Values
+transactions_df = transactions_df.dropna()
+customers_df = customers_df.dropna()
+
+
+🛠 Step 3: Perform Aggregations (Total Sales per Category)
+python
+CopyEdit
+from pyspark.sql.functions import sum
+
+# Total Sales per Category
+category_sales_df = transactions_df.groupBy("category").agg(sum("amount").alias("total_sales"))
+
+# Show Results
+category_sales_df.show()
+
+✅ Expected Output:
+diff
+CopyEdit
++-----------+------------+
+| category  | total_sales|
++-----------+------------+
+| Electronics |  150000  |
+| Fashion    |   80000  |
+| Grocery    |   60000  |
++-----------+------------+
+
+
+🛠 Step 4: Join Transactions with Customer Data (Optimize with Broadcast Join)
+python
+CopyEdit
+from pyspark.sql.functions import broadcast
+
+# Optimized Join
+joined_df = transactions_df.join(broadcast(customers_df), "customer_id", "left")
+
+# Show Results
+joined_df.show(5)
+
+✅ Why use broadcast join?
+Faster execution (avoids shuffling).
+
+
+Best when one table is small (customer data).
+
+
+
+🛠 Step 5: Store Final Results in Parquet (Efficient Format)
+python
+CopyEdit
+# Save as Parquet (Optimized for Analytics)
+joined_df.write.mode("overwrite").parquet("output/sales_analysis.parquet")
+
+✅ Why Parquet?
+Compressed storage (Saves space).
+
+
+Columnar format (Faster queries).
+
+
+Efficient for big data processing.
+
+
+
+📌 Bonus: Streaming Pipeline (Live Data Processing)
+💡 Want to process real-time transactions using Structured Streaming?
+ 👉 Would you like me to extend this project for streaming data ingestion? 🚀
+
+🔥 Streaming Data Pipeline: Real-Time E-Commerce Sales Processing
+💡 Goal: Extend the batch pipeline to real-time streaming using PySpark’s Structured Streaming.
+
+📌 Scenario: Live Transactions Processing
+Your e-commerce platform receives transactions in real-time from customers. You need to:
+ ✅ Continuously ingest new transaction data.
+ ✅ Filter invalid transactions (e.g., negative amounts).
+ ✅ Aggregate total sales per category in real-time.
+ ✅ Write the results to a console and store them in Parquet.
+
+🛠 Step 1: Set Up Spark Streaming
+python
+CopyEdit
+from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType, IntegerType, StringType, DoubleType, TimestampType
+
+# Initialize Spark
+spark = SparkSession.builder.appName("RealTimeECommerce").getOrCreate()
+
+# Define Schema for Streaming Data
+schema = StructType() \
+    .add("order_id", IntegerType()) \
+    .add("customer_id", IntegerType()) \
+    .add("amount", DoubleType()) \
+    .add("category", StringType()) \
+    .add("timestamp", TimestampType())
+
+# Read Streaming Data (Simulated from a folder)
+transactions_stream_df = spark.readStream \
+    .schema(schema) \
+    .csv("streaming_data_folder", header=True)
+
+# Show Schema
+transactions_stream_df.printSchema()
+
+✅ Data Source:
+ New CSV files are continuously dropped into streaming_data_folder.
+
+🛠 Step 2: Data Cleaning (Filter Invalid Transactions)
+python
+CopyEdit
+from pyspark.sql.functions import col
+
+# Remove Transactions with Negative Amounts
+valid_transactions_df = transactions_stream_df.filter(col("amount") > 0)
+
+
+🛠 Step 3: Real-Time Aggregation (Total Sales per Category)
+python
+CopyEdit
+from pyspark.sql.functions import sum
+
+# Aggregate Sales by Category
+category_sales_df = valid_transactions_df.groupBy("category").agg(sum("amount").alias("total_sales"))
+
+
+🛠 Step 4: Write Stream Output to Console
+python
+CopyEdit
+query = category_sales_df.writeStream \
+    .outputMode("complete") \
+    .format("console") \
+    .start()
+
+query.awaitTermination()
+
+✅ Expected Console Output (Updating in Real-Time):
+diff
+CopyEdit
++-----------+------------+
+| category  | total_sales|
++-----------+------------+
+| Electronics |  50000  |
+| Fashion    |   25000  |
+| Grocery    |   10000  |
++-----------+------------+
+
+This updates dynamically as new transactions arrive.
+
+🛠 Step 5: Store Processed Data in Parquet (Efficient Analytics)
+python
+CopyEdit
+query = category_sales_df.writeStream \
+    .outputMode("complete") \
+    .format("parquet") \
+    .option("path", "output/real_time_sales") \
+    .option("checkpointLocation", "checkpoint_dir") \
+    .start()
+
+query.awaitTermination()
+
+✅ Why Checkpointing?
+Ensures Spark remembers progress even if it restarts.
+
+
+Required for fault tolerance in streaming.
+
+
