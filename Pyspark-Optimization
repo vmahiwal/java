@@ -1,0 +1,120 @@
+Perfect idea 👍 — the best way to learn PySpark optimizations is by working with a large-enough dataset (~1GB) and seeing how your queries behave before & after tuning.
+
+I’ll walk you through a hands-on PySpark job:
+
+🔹 Step 1: Get 1GB Sample Data
+
+We can use the NYC Taxi Dataset (public & free). It’s widely used in Spark tutorials.
+
+Download link (yellow taxi trips, 2019, ~1.5GB CSV):
+👉 https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2019-01.csv
+
+(You can replace with other months to get more data).
+
+# Download dataset (~1.5 GB)
+wget https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2019-01.csv -O taxi_2019_01.csv
+
+🔹 Step 2: PySpark Job (Basic Load + Aggregation)
+
+Create a script taxi_analysis.py:
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, avg, count
+
+# Initialize Spark
+spark = SparkSession.builder \
+    .appName("NYC Taxi Optimization Demo") \
+    .config("spark.sql.shuffle.partitions", "200") \
+    .getOrCreate()
+
+# Load 1GB dataset
+df = spark.read.csv("taxi_2019_01.csv", header=True, inferSchema=True)
+
+print("Total rows:", df.count())
+print("Schema:")
+df.printSchema()
+
+# Example transformation: average fare per passenger count
+result = df.groupBy("passenger_count") \
+           .agg(avg("fare_amount").alias("avg_fare"),
+                count("*").alias("trip_count")) \
+           .orderBy("trip_count", ascending=False)
+
+result.show(10, truncate=False)
+
+spark.stop()
+
+
+Run it:
+
+spark-submit taxi_analysis.py
+
+🔹 Step 3: Measure Performance Issues
+
+When you first run this:
+
+Spark will shuffle data heavily
+
+Execution may take minutes on a local machine
+
+🔹 Step 4: Optimize Step by Step
+
+Here’s how you learn optimization by doing hands-on:
+
+File Format Optimization
+
+Convert CSV → Parquet (columnar, compressed):
+
+df.write.mode("overwrite").parquet("taxi_parquet")
+df_parquet = spark.read.parquet("taxi_parquet")
+
+
+Partition Pruning
+
+Partition by a frequent filter column (e.g., tpep_pickup_datetime by year/month):
+
+df = df.withColumn("year", col("tpep_pickup_datetime").substr(1,4))
+df.write.partitionBy("year").parquet("taxi_partitioned")
+
+
+Reduce Shuffle Partitions
+Default is 200. Adjust based on dataset & cluster:
+
+spark.conf.set("spark.sql.shuffle.partitions", "50")
+
+
+Caching
+If reusing a DataFrame multiple times:
+
+df.cache()
+df.count()  # materializes cache
+
+
+Broadcast Joins
+If joining with small reference tables:
+
+from pyspark.sql.functions import broadcast
+result = df.join(broadcast(dim_table), "id")
+
+
+Skew Handling
+
+If passenger_count has skew (e.g., most rows = 1), use salting or spark.sql.adaptive.enabled=true.
+
+🔹 Step 5: Practice Exercises
+
+Run your job and:
+
+Compare runtime for CSV vs Parquet
+
+Try changing spark.sql.shuffle.partitions (200 → 50 → 10)
+
+Check Spark UI (http://localhost:4040) to see shuffle stages
+
+Cache df and rerun aggregation — notice speedup
+
+Partition by year/month and run a filter query (e.g., only 2019-01-15)
+
+✅ By the end, you’ll see the difference in job runtime before and after optimization.
+
+Would you like me to make this into a Google Colab notebook (so you can run without Spark install), or do you want it as a local PySpark project (with folder structure + spark-submit jobs)?
